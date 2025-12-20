@@ -1,4 +1,4 @@
-﻿var assert = require('assert').strict;
+var assert = require('assert').strict;
 var app = require('./index.js');
 var request = require('supertest')(app);
 

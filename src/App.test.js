@@ -31,7 +31,7 @@ describe('Test Suite for App Component', () => {
     })
 
     render(<App cartId={999999} />);
-    await waitFor(() => screen.getByTestId('thanks_id'))
+    await screen.findByTestId('thanks_id')
     const element = screen.getByText("Thank you for shopping with us!");
     expect(element).toBeInTheDocument();
   });

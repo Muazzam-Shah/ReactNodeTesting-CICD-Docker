@@ -41,7 +41,7 @@ jobs:
           cd ReactNodeTesting-CICD
           git pull origin main
           npm install
-          npm run build
+          npm run build-react
           pm2 restart all || pm2 start npm --name testing-app -- start
 
     - name: Email on Success

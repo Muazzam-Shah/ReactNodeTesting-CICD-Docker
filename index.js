@@ -1,4 +1,4 @@
-﻿var express = require('express'); // For route handlers and templates to serve up.
+var express = require('express'); // For route handlers and templates to serve up.
 var path = require('path'); // Populating the path property of the request
 var responseTime = require('response-time'); // For code timing checks for performance logging
 var logger = require('morgan'); // HTTP request logging

@@ -66,4 +66,3 @@ jobs:
 
             # Start new containers
             docker-compose -f ~/app/docker-compose.yml up -d
-            

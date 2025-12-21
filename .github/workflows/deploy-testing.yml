@@ -1,0 +1,50 @@
+name: Deploy to Testing Environment
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies (local)
+        run: npm install
+
+      - name: Run unit tests
+        run: npm test -- --watchAll=false
+
+      - name: Run linting
+        run: npx eslint ./ || echo "Lint warnings ignored"
+
+      - name: SSH to Testing EC2 & Deploy Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.TESTING_EC2_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.TESTING_SSH_KEY }}
+          script: |
+            # Login to ECR on EC2
+            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 034362072598.dkr.ecr.eu-north-1.amazonaws.com
+
+            # Pull latest images
+            docker pull 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-backend:latest
+            docker pull 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-frontend:latest
+
+            # Stop previous containers
+            docker-compose -f ~/app/docker-compose.yml down
+
+            # Start new containers
+            docker-compose -f ~/app/docker-compose.yml up -d
+

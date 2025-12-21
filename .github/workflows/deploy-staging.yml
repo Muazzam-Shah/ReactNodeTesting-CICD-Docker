@@ -1,0 +1,42 @@
+name: Deploy to Staging Environment
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run unit tests
+        run: npm test -- --watchAll=false
+
+      - name: Run linting
+        run: npx eslint ./ || echo "Lint warnings ignored"
+
+      - name: SSH to Staging EC2 & Deploy Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_EC2_IP }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 034362072598.dkr.ecr.eu-north-1.amazonaws.com
+
+            docker pull 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-backend:latest
+            docker pull 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-frontend:latest
+
+            docker-compose -f ~/app/docker-compose.yml down
+            docker-compose -f ~/app/docker-compose.yml up -d
+

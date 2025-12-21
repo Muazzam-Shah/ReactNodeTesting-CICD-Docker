@@ -2,6 +2,7 @@ var express = require('express'); // For route handlers and templates to serve u
 var path = require('path'); // Populating the path property of the request
 var responseTime = require('response-time'); // For code timing checks for performance logging
 var logger = require('morgan'); // HTTP request logging
+var cors = require('cors'); // Enable CORS for frontend communication
 
 var carts = require('./carts');
 var app = express();
@@ -9,17 +10,14 @@ var app = express();
 // Adds an X-Response-Time header to responses to measure response times
 app.use(responseTime());
 
+// Enable CORS for frontend communication
+app.use(cors());
+
 // logs all HTTP requests. The "dev" option gives it a specific styling
 app.use(logger('dev'));
 
 // Sets up the response object in routes to contain a body property with an object of what is parsed from a JSON body request payload
 app.use(express.json())
-
-// Serving up of React app HTML with its static content - images, CSS files, and JavaScript files
-app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
-app.use(express.static(path.join(__dirname, 'build')));
 
 // Rest API routes
 app.use('/api/carts', carts);
@@ -51,7 +49,7 @@ app.use(function (err, req, res, next) { // eslint-disable-line no-unused-vars
     res.status(500).json({ message: err.toString(), error: {} });
 });
 
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 5000);
 
 var server = app.listen(app.get('port'), function () {
   console.log('Express server listening on port ' + server.address().port);

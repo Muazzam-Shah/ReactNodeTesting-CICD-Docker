@@ -36,7 +36,6 @@ jobs:
         working-directory: ./backend
         run: npx jest --runInBand --testTimeout 999999 --collectCoverage true api_endpoint.test.js
 
-
       - name: Lint frontend
         working-directory: ./frontend
         run: npx eslint src/ || echo "Lint warnings ignored"
@@ -45,13 +44,19 @@ jobs:
         working-directory: ./backend
         run: npx eslint ./ || echo "Lint warnings ignored"
 
-      # SSH to Staging EC2 & Deploy Docker Compose
+      # Setup SSH key for GitHub Actions
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/staging-key.pem
+          chmod 600 ~/staging-key.pem
+
+      # SSH to Staging EC2 & deploy Docker Compose
       - name: SSH to Staging EC2 & Deploy Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.STAGING_EC2_IP }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
+          key_path: ~/staging-key.pem
           script: |
             # Login to ECR on EC2
             aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 034362072598.dkr.ecr.eu-north-1.amazonaws.com
@@ -65,4 +70,3 @@ jobs:
 
             # Start new containers
             docker-compose -f ~/app/docker-compose.yml up -d
-            

@@ -21,7 +21,7 @@
     "test-mock": "react-scripts test src/todoTitle.mock.test.js",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://localhost:5000",
+  "proxy": "http://backend:5000",
   "eslintConfig": {
     "extends": [
       "react-app",

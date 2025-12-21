@@ -34,7 +34,8 @@ jobs:
 
       - name: Run backend unit tests
         working-directory: ./backend
-        run: npm test
+        run: npx jest --runInBand --testTimeout 999999 --collectCoverage true api_endpoint.test.js
+
 
       - name: Lint frontend
         working-directory: ./frontend

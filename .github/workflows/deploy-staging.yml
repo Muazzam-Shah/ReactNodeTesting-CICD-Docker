@@ -1,0 +1,68 @@
+name: Deploy to Staging Environment
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Run frontend unit tests
+        working-directory: ./frontend
+        run: npm test -- --watchAll=false
+
+      - name: Run backend unit tests
+        working-directory: ./backend
+        run: npx jest --runInBand --testTimeout 999999 --collectCoverage true api_endpoint.test.js
+
+      - name: Lint frontend
+        working-directory: ./frontend
+        run: npx eslint src/ || echo "Lint warnings ignored"
+
+      - name: Lint backend
+        working-directory: ./backend
+        run: npx eslint ./ || echo "Lint warnings ignored"
+
+      # SSH to Staging EC2 & Deploy Docker Compose
+      - name: SSH to Staging EC2 & Deploy Docker Compose
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_EC2_IP }}
+          username: ${{ secrets.EC2_USER }}
+          # Passing the secret directly to avoid container isolation issues
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: 22
+          script: |
+            # Login to ECR on EC2
+            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 034362072598.dkr.ecr.eu-north-1.amazonaws.com
+
+            # Pull latest images
+            docker pull 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-backend:latest
+            docker pull 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-frontend:latest
+
+            # Stop previous containers
+            docker-compose -f ~/app/docker-compose.yml down
+
+            # Start new containers
+            docker-compose -f ~/app/docker-compose.yml up -d

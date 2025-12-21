@@ -8,6 +8,7 @@ on:
 jobs:
   deploy-testing:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout PR code
         uses: actions/checkout@v4
@@ -19,15 +20,31 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies (local)
+      - name: Install frontend dependencies
+        working-directory: ./frontend
         run: npm install
 
-      - name: Run unit tests
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Run frontend unit tests
+        working-directory: ./frontend
         run: npm test -- --watchAll=false
 
-      - name: Run linting
+      - name: Run backend unit tests
+        working-directory: ./backend
+        run: npm test
+
+      - name: Lint frontend
+        working-directory: ./frontend
+        run: npx eslint src/ || echo "Lint warnings ignored"
+
+      - name: Lint backend
+        working-directory: ./backend
         run: npx eslint ./ || echo "Lint warnings ignored"
 
+      # SSH to Testing EC2 & deploy Docker Compose
       - name: SSH to Testing EC2 & Deploy Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -47,4 +64,3 @@ jobs:
 
             # Start new containers
             docker-compose -f ~/app/docker-compose.yml up -d
-

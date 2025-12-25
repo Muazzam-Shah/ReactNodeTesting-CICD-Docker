@@ -44,6 +44,30 @@ jobs:
         working-directory: ./backend
         run: npx eslint ./ || echo "Lint warnings ignored"
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        working-directory: ./backend
+        run: |
+          docker build -t reactnode-backend:latest .
+          docker tag reactnode-backend:latest 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-backend:latest
+          docker push 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-backend:latest
+
+      - name: Build and push frontend image
+        working-directory: ./frontend
+        run: |
+          docker build -t reactnode-frontend:latest .
+          docker tag reactnode-frontend:latest 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-frontend:latest
+          docker push 034362072598.dkr.ecr.eu-north-1.amazonaws.com/reactnode-frontend:latest
+
       - name: SSH to Testing EC2 & Deploy Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
